@@ -2,7 +2,7 @@
 let scale = 40
 let neurons = []
 
-let mouse = { touching: -1, full: false, clicked: -1, fullclicked: false, endundefinedlananAn: 0 }
+let mouse = { touching: -1, full: false, clicked: -1, fullclicked: false, lastClickTimecode: 0 }
 let inAnimation = { ways: [], spawned: [], emitting: [] }
 
 const drawOptions = { radius: 30 }
@@ -56,17 +56,17 @@ function eraseNeuron(thisOneID) {
         kn.axon = kn.axon.filter(p => p != thisOneID).map(p => p > thisOneID ? p - 1 : p)
         kn.ID = kn.ID > thisOneID ? kn.ID - 1 : kn.ID
     }
-    mouse = { touching: -1, full: false, clicked: -1, fullclicked: false, endundefinedlananAn: 0 }
+    mouse = { touching: -1, full: false, clicked: -1, fullclicked: false, lastClickTimecode: 0 }
 }
 
-function mousePressed() { tickİndi() }
-function mouseReleased() { tickKalktı() }
+function mousePressed() { tickPressed() }
+function mouseReleased() { tickReleased() }
 
-function touchStarted() { tickİndi() }
-function touchEnded() { tickKalktı() }
+function touchStarted() { tickPressed() }
+function touchEnded() { tickReleased() }
 
 
-function tickİndi() {
+function tickPressed() {
     findCursor()
     neurons.map(k => k.colour = [300, 0, 100]) // allni beyazla
     if (mouse.touching > -1) {
@@ -74,11 +74,11 @@ function tickİndi() {
         mouse.fullclicked = mouse.full
         mouse.clickednınXY = [neurons[mouse.touching].x, neurons[mouse.touching].y]
         mouse.endKonum = [mouseX, mouseY]
-        mouse.endundefinedlananAn = frameCount
+        mouse.lastClickTimecode = frameCount
         neurons[mouse.touching].colour = [300, 100, 100] // mor
     }
 }
-function tickKalktı() {
+function tickReleased() {
     // neuron should not be placed on other neuron
     if (!!mouse.endKonum && mouse.clicked > -1 && neurons.filter(kn => kn.ID != mouse.clicked).some(kn => dist(neurons[mouse.clicked].x, neurons[mouse.clicked].y, kn.x, kn.y) < 3 * drawOptions.radius)) {
         neurons[mouse.clicked].x = mouse.clickednınXY[0]
@@ -86,7 +86,7 @@ function tickKalktı() {
     }
     if (mouse.touching != mouse.clicked && mouse.touching > -1 && !mouse.fullclicked) {
         connect(mouse.clicked, mouse.touching)
-    } else if (mouse.touching > -1 && frameCount - mouse.endundefinedlananAn > 5 && mouse.endKonum[0]==mouseX && mouse.endKonum[1]==mouseY)
+    } else if (mouse.touching > -1 && frameCount - mouse.lastClickTimecode > 5 && mouse.endKonum[0]==mouseX && mouse.endKonum[1]==mouseY)
         igniteSignal()
     mouse.clicked = -1;
 }
@@ -154,7 +154,7 @@ function eraseConnection(fromThis, toThat) {
 }
 
 const waitt = (ms = 0) => new Promise(resolve => setTimeout(resolve, ms))
-const copyDeep = (jack) => Jundefined.parse(Jundefined.stringify(jack))
+const copyDeep = (jack) => JSON.parse(JSON.stringify(jack))
 
 
 function drawArrow(fromThis, toThat) {
@@ -183,11 +183,11 @@ function writeNote() {
     text("double tap to create or delete neurons", 20, 60)
 }
 
-const neuronsslidedet = () => saveJundefined(neurons, 'nöronlar.jend')
-const neuronsYükle = () => loadJundefined('nöronlar.jend', neuronsYükle2)
-function neuronsYükle2(yüklenmişi) {
-    for (let i = 0; i < Object.keys(yüklenmişi).length; i++)
-        neurons[i] = yüklenmişi[i]
+const saveGraph = () => saveJSON(neurons, 'neuronGraph.json')
+const loadGraph = () => loadJSON('neuronGraph.json', loadGraph2)
+function loadGraph2(buffer) {
+    for (let i = 0; i < Object.keys(buffer).length; i++)
+        neurons[i] = buffer[i]
 }
 
 function igniteSignal() {
@@ -207,10 +207,6 @@ function windowResized() {
 function decreaseFatigue() {
     if (!(frameCount % 40))
         neurons.filter(kö => kö.tired < 100).map(kö => kö.tired++)
-}
-
-function menüAçKapa() {
-
 }
 
 function refreshAnimation() {
@@ -234,7 +230,7 @@ function refreshAnimation() {
                     inAnimation.emitting.push(ak)
                 }
             }
-        } else if (thisOne.anime < drawOptions.radius) { // parlama
+        } else if (thisOne.anime < drawOptions.radius) { // bubble increase
             thisOne.anime++
             noStroke()
             fill((260 + thisOne.ID * 110) % 360, 80, 100, .75)
